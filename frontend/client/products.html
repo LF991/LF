@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produits - CastleMarket</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root { --primary: #10b981; --primary-dark: #059669; }
+        .glass-nav { background: rgba(16, 185, 129, 0.95); backdrop-filter: blur(16px); }
+        .dashboard-card { background: white; border-radius: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .filter-card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); padding: 1.5rem; }
+        .filter-group { background: #f9fafb; padding: 1rem; border-radius: 1rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
+        .filter-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151; }
+        .product-card { background: white; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .product-image { height: 200px; background: linear-gradient(45deg, #f3f4f6, #e5e7eb); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .product-image img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        .product-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; opacity: 0; transition: opacity 0.3s; }
+        .product-card:hover .product-actions { opacity: 1; }
+        .product-actions button { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .quick-view-btn { background: white; color: #374151; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .quick-view-btn:hover { background: #10b981; color: white; }
+        .add-to-cart-btn { background: white; color: #374151; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .add-to-cart-btn:hover { background: #10b981; color: white; }
+        .product-badges { position: absolute; top: 10px; left: 10px; }
+        .product-badges .badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .product-badges .badge.out { background: #fee2e2; color: #dc2626; }
+        .product-badges .badge.low { background: #fef3c7; color: #d97706; }
+        .product-badges .badge.available { background: #d1fae5; color: #059669; }
+        .product-content { padding: 1.25rem; }
+        .product-title { font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; line-height: 1.3; }
+        .product-description { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { display: flex; align-items: baseline; gap: 8px; margin-bottom: 0.75rem; }
+        .product-price .price { font-size: 1.25rem; font-weight: 700; color: #10b981; }
+        .product-price .weight { font-size: 0.8rem; color: #6b7280; }
+        .product-stock { font-size: 0.75rem; font-weight: 500; margin-bottom: 1rem; }
+        .product-stock.available { color: #059669; }
+        .product-stock.low { color: #d97706; }
+        .product-stock.out { color: #dc2626; }
+        .btn-add-to-cart { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 9999px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-add-to-cart:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+        .btn-add-to-cart:disabled { background: #9ca3af; cursor: not-allowed; transform: none; box-shadow: none; }
+        .product-category { display: inline-block; background: #ecfdf5; color: #059669; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .btn-primary { background: #10b981; color: white; padding: 0.75rem 1.5rem; border-radius: 9999px; font-weight: 600; transition: all 0.2s; }
+        .btn-primary:hover { background: #059669; transform: translateY(-1px); }
+        .btn-outline { border: 2px solid #10b981; color: #10b981; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; transition: all 0.2s; }
+        .btn-outline:hover { background: #10b981; color: white; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); }
+        .modal-content { background-color: white; margin: 5% auto; padding: 2rem; border-radius: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 90%; max-width: 700px; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; color: #9ca3af; cursor: pointer; }
+        .close:hover { color: #ef4444; }
+        .view-btn { width: 40px; height: 40px; border: 2px solid #e5e7eb; background: white; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .view-btn:hover, .view-btn.active { border-color: #10b981; color: #10b981; }
+        .quick-view-image { background: linear-gradient(45deg, #f3f4f6, #e5e7eb); border-radius: 1.5rem; height: 250px; display: flex; align-items: center; justify-content: center; }
+        .quick-view-image img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        .cart-toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 3000; display: flex; align-items: center; gap: 1rem; transform: translateX(400px); transition: transform 0.3s ease-out; }
+        .cart-toast.show { transform: translateX(0); }
+        footer { background: #0f172a; color: white; padding: 3rem 0 1rem; }
+        .footer-section h3 { color: white; margin-bottom: 1rem; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.5rem; }
+        .footer-section ul li a { color: #94a3b8; }
+        .footer-section ul li a:hover { color: #10b981; }
+        .social-links a { width: 40px; height: 40px; background: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s; }
+        .social-links a:hover { background: #10b981; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+    <!-- Navigation -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 py-4">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <a href="../index.html" class="flex items-center gap-2 text-2xl font-bold text-white">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-lg">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <span class="tracking-tight">CastleMarket</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-bold text-white">
+                <a href="dashboard.html" class="hover:text-emerald-200 transition-colors">Mon Compte</a>
+                <a href="products.html" class="text-emerald-200">Produits</a>
+                <a href="cart.html" class="hover:text-emerald-200 transition-colors">Panier</a>
+                <a href="orders.html" class="hover:text-emerald-200 transition-colors">Commandes</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-emerald-600">0</span>
+                </a>
+                <button id="logoutBtn" class="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all text-sm font-medium">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-28 pb-20">
+        <div class="container mx-auto px-6">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900">Nos <span class="text-emerald-600">Produits</span></h1>
+                <p class="text-slate-500 text-lg mt-2">Découvrez notre sélection de produits frais et de qualité</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <!-- Filters Sidebar -->
+                <aside class="lg:col-span-1">
+                    <div class="filter-card sticky top-24" style="max-height: 80vh; overflow-y: auto;">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold text-slate-900"><i class="fas fa-filter mr-2 text-emerald-600"></i>Filtres</h3>
+                            <button id="clearFilters" class="text-emerald-600 text-sm hover:underline">Effacer</button>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="filter-group">
+                            <label>Rechercher</label>
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="searchInput" placeholder="Nom du produit..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                        </div>
+
+                        <!-- Categories -->
+                        <div class="filter-group">
+                            <label>Catégories</label>
+                            <div id="categoryList" class="max-h-40 overflow-y-auto space-y-2"></div>
+                        </div>
+
+                        <!-- Price Range -->
+                        <div class="filter-group">
+                            <label>Prix (€)</label>
+                            <div class="flex gap-2 mb-2">
+                                <input type="number" id="minPrice" placeholder="Min" class="w-full px-3 py-2 border border-slate-200 rounded-lg">
+                                <input type="number" id="maxPrice" placeholder="Max" class="w-full px-3 py-2 border border-slate-200 rounded-lg">
+                            </div>
+                            <input type="range" id="priceSlider" class="w-full" min="0" max="50" value="50">
+                            <p class="text-center text-sm text-slate-500 mt-1">0€ - <span id="priceRangeDisplay">50€</span></p>
+                        </div>
+
+                        <!-- Sort -->
+                        <div class="filter-group">
+                            <label>Trier par</label>
+                            <select id="sortSelect" class="w-full px-3 py-2 border border-slate-200 rounded-lg">
+                                <option value="name_asc">Nom (A-Z)</option>
+                                <option value="name_desc">Nom (Z-A)</option>
+                                <option value="price_asc">Prix croissant</option>
+                                <option value="price_desc">Prix décroissant</option>
+                                <option value="stock_desc">Stock disponible</option>
+                            </select>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Products Grid -->
+                <div class="lg:col-span-3">
+                    <!-- View Controls -->
+                    <div class="flex items-center justify-between mb-6">
+                        <span id="resultsCount" class="text-slate-500">0 produits trouvés</span>
+                        <div class="flex gap-2">
+                            <button id="gridView" class="view-btn active"><i class="fas fa-th"></i></button>
+                            <button id="listView" class="view-btn"><i class="fas fa-list"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Products Container -->
+<div class="products-container" id="productsContainer" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;"></div>
+
+                    <!-- Loading -->
+                    <div id="productsLoading" class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-3xl text-emerald-600"></i>
+                        <p class="mt-4 text-slate-500">Chargement des produits...</p>
+                    </div>
+
+                    <!-- No Results -->
+                    <div id="noResults" class="text-center py-12 hidden">
+                        <i class="fas fa-search text-4xl text-slate-300 mb-4"></i>
+                        <h3 class="text-xl font-bold text-slate-900">Aucun produit trouvé</h3>
+                        <p class="text-slate-500 mb-4">Essayez de modifier vos critères de recherche</p>
+                        <button id="resetFilters" class="btn-primary">Réinitialiser les filtres</button>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="pagination" class="flex justify-center gap-2 mt-8"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Quick View Modal -->
+    <div id="quickViewModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close">&times;</span>
+            <div id="quickViewContent"></div>
+        </div>
+    </div>
+
+    <!-- Cart Toast -->
+    <div id="cartToast" class="cart-toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Produit ajouté au panier !</span>
+        <a href="cart.html" class="bg-white/20 px-4 py-2 rounded-full text-sm font-medium">Voir le panier</a>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="footer-section">
+                    <div class="flex items-center gap-2 text-2xl font-bold mb-4">
+                        <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <span>CastleMarket</span>
+                    </div>
+                    <p class="text-slate-400">Votre supermarché en ligne de confiance</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Liens utiles</h3>
+                    <ul>
+                        <li><a href="dashboard.html">Mon compte</a></li>
+                        <li><a href="products.html">Produits</a></li>
+                        <li><a href="cart.html">Panier</a></li>
+                        <li><a href="orders.html">Commandes</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Suivez-nous</h3>
+                    <div class="social-links flex gap-3">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
+                <p>&copy; 2025 CastleMarket. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (!token) { window.location.href = '../index.html'; return; }
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    authManager.handleLogout();
+                    window.location.href = '../index.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

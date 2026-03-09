@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panier - CastleMarket</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root { --primary: #10b981; --primary-dark: #059669; }
+        .glass-nav { background: rgba(16, 185, 129, 0.95); backdrop-filter: blur(16px); }
+        .dashboard-card { background: white; border-radius: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        /* Cart Items Styling */
+        .cart-item { 
+            display: flex; 
+            gap: 1.5rem; 
+            padding: 1.5rem; 
+            background: white; 
+            border-radius: 1.5rem; 
+            margin-bottom: 1rem; 
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .cart-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .cart-item-image { 
+            width: 120px; 
+            height: 120px; 
+            border-radius: 1.5rem; 
+            background: linear-gradient(45deg, #f3f4f6, #e5e7eb); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .cart-item-image img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        .cart-item-image .placeholder-icon {
+            font-size: 2.5rem;
+            color: #9ca3af;
+        }
+        .cart-item-details {
+            flex: 1;
+        }
+        .cart-item-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        .cart-item-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 0.5rem;
+        }
+        .cart-item-category {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #059669;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .cart-item-quantity span {
+            font-weight: 600;
+            color: #374151;
+            min-width: 30px;
+            text-align: center;
+        }
+        .quantity-btn { 
+            width: 36px; 
+            height: 36px; 
+            border: 2px solid #e5e7eb; 
+            background: white; 
+            border-radius: 0.5rem; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            transition: all 0.2s;
+            color: #374151;
+        }
+        .quantity-btn:hover { 
+            background: #10b981; 
+            color: white; 
+            border-color: #10b981; 
+        }
+        .quantity-btn.remove {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+        .quantity-btn.remove:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        .cart-item-total {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
+            min-width: 100px;
+            text-align: right;
+        }
+        .cart-item-remove {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s;
+        }
+        .cart-item-remove:hover {
+            color: #dc2626;
+        }
+        
+        /* Cart Summary Styling */
+        .cart-summary { 
+            background: white; 
+            border-radius: 2rem; 
+            padding: 2rem; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+            position: sticky; 
+            top: 100px;
+            border: 1px solid #e5e7eb;
+        }
+        .cart-summary h2 { 
+            font-size: 1.25rem; 
+            font-weight: 700; 
+            color: #111827; 
+            margin-bottom: 1.5rem; 
+            padding-bottom: 1rem; 
+            border-bottom: 2px solid #e5e7eb; 
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+        .summary-row.free {
+            color: #059669;
+            font-weight: 600;
+        }
+        .summary-row.total {
+            border-top: 2px solid #e5e7eb;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        .summary-row.total span:last-child {
+            color: #10b981;
+            font-size: 1.5rem;
+        }
+        .summary-details {
+            background: #f9fafb;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, #10b981, #059669); 
+            color: white; 
+            padding: 1rem 2rem; 
+            border-radius: 9999px; 
+            font-weight: 700; 
+            transition: all 0.2s; 
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #059669, #047857); 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #10b981;
+            color: #10b981;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-outline:hover {
+            background: #10b981;
+            color: white;
+        }
+        
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); }
+        .modal-content { background-color: white; margin: 5% auto; padding: 2rem; border-radius: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 90%; max-width: 500px; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; color: #9ca3af; cursor: pointer; }
+        .close:hover { color: #ef4444; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
+        .form-group select, .form-group textarea { width: 100%; padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 1rem; font-size: 1rem; transition: border-color 0.2s; }
+        .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #10b981; }
+        footer { background: #0f172a; color: white; padding: 3rem 0 1rem; }
+        .footer-section h3 { color: white; margin-bottom: 1rem; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.5rem; }
+        .footer-section ul li a { color: #94a3b8; }
+        .footer-section ul li a:hover { color: #10b981; }
+        .social-links a { width: 40px; height: 40px; background: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s; }
+        .social-links a:hover { background: #10b981; transform: translateY(-2px); }
+        
+        /* Empty Cart */
+        .empty-cart-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+        .empty-cart-icon i {
+            font-size: 3rem;
+            color: #9ca3af;
+        }
+        
+        .modal-content.order-confirmation {
+            max-height: 90vh;
+            overflow-y: auto;
+            padding-right: 0;
+        }
+        /* Custom Scrollbar */
+        .modal-content.order-confirmation::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-content.order-confirmation::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .modal-content.order-confirmation::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 3px;
+        }
+        .modal-content.order-confirmation::-webkit-scrollbar-thumb:hover {
+            background: #059669;
+        }
+        .order-confirmation .confirmation-header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; padding: 2rem; text-align: center;
+            border-radius: 2rem 2rem 0 0;
+        }
+        .order-confirmation .success-icon {
+            font-size: 4rem; margin-bottom: 1rem;
+            animation: successPulse 0.6s ease-out;
+        }
+        @keyframes successPulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .order-confirmation .confirmation-header h2 { color: white; font-size: 1.5rem; margin: 0; }
+        .order-confirmation .confirmation-body { padding: 2rem; }
+        .order-confirmation .order-number {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            padding: 1.5rem; border-radius: 1rem; text-align: center;
+            margin-bottom: 1.5rem; border: 2px solid #10b981;
+        }
+        .order-confirmation .order-number .label {
+            display: block; color: #059669;
+            font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;
+        }
+        .order-confirmation .order-number .value {
+            display: block; font-size: 2rem;
+            font-weight: 800; color: #10b981;
+        }
+        .order-confirmation .order-summary { margin-bottom: 1.5rem; }
+        .order-confirmation .order-summary h3 {
+            font-size: 1rem; font-weight: 700; color: #111827;
+            margin-bottom: 1rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .order-confirmation .summary-items { max-height: 200px; overflow-y: auto; }
+        .order-confirmation .summary-item {
+            display: flex; justify-content: space-between;
+            padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+        .order-confirmation .summary-item:last-child { border-bottom: none; }
+        .order-confirmation .summary-item span:first-child { color: #374151; font-weight: 500; }
+        .order-confirmation .summary-item span:last-child { color: #111827; font-weight: 600; }
+        .order-confirmation .order-totals {
+            background: #f9fafb; padding: 1rem;
+            border-radius: 1rem; margin-bottom: 1.5rem;
+        }
+        .order-confirmation .total-row {
+            display: flex; justify-content: space-between;
+            padding: 0.5rem 0; font-size: 0.95rem;
+        }
+        .order-confirmation .total-row span:first-child { color: #6b7280; }
+        .order-confirmation .total-row:last-child {
+            border-top: 2px solid #e5e7eb;
+            margin-top: 0.5rem; padding-top: 0.75rem;
+            font-size: 1.125rem; font-weight: 700;
+        }
+        .order-confirmation .total-row:last-child span:last-child {
+            color: #10b981; font-size: 1.25rem;
+        }
+        .order-confirmation .confirmation-footer {
+            padding: 1.5rem 2rem; background: #f9fafb;
+            border-radius: 0 0 2rem 2rem;
+            display: flex; gap: 1rem; justify-content: center;
+        }
+        .order-confirmation .btn-orders {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; padding: 0.875rem 1.5rem;
+            border-radius: 9999px; font-weight: 600;
+            border: none; cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .order-confirmation .btn-orders:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        .order-confirmation .btn-shopping {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; padding: 0.875rem 1.5rem;
+            border-radius: 9999px; font-weight: 600;
+            border: none; cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .order-confirmation .btn-shopping:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        /* Notifications */
+        .notification {
+            position: fixed; top: 100px; right: 20px;
+            padding: 1rem 1.5rem; border-radius: 1rem;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 3000; animation: slideInRight 0.3s ease-out;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .notification.success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .notification.error { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Quantity Input */
+        .quantity-input {
+            width: 60px; padding: 0.5rem;
+            border: 2px solid #e5e7eb; border-radius: 0.5rem;
+            text-align: center; font-weight: 600;
+            color: #374151; font-size: 0.95rem;
+        }
+        .quantity-input:focus { outline: none; border-color: #10b981; }
+        
+        /* Checkout Button Enhanced */
+        .btn-checkout {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; padding: 1rem 2rem;
+            border-radius: 9999px; font-weight: 700;
+            border: none; cursor: pointer;
+            width: 100%; font-size: 1rem;
+            display: flex; align-items: center;
+            justify-content: center; gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn-checkout:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+    <!-- Navigation -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 py-4">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <a href="../index.html" class="flex items-center gap-2 text-2xl font-bold text-white">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-lg">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <span class="tracking-tight">CastleMarket</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-bold text-white">
+                <a href="dashboard.html" class="hover:text-emerald-200 transition-colors">Mon Compte</a>
+                <a href="products.html" class="hover:text-emerald-200 transition-colors">Produits</a>
+                <a href="cart.html" class="text-emerald-200">Panier</a>
+                <a href="orders.html" class="hover:text-emerald-200 transition-colors">Commandes</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-emerald-600">0</span>
+                </a>
+                <button id="logoutBtn" class="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all text-sm font-medium">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-28 pb-20">
+        <div class="container mx-auto px-6">
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900">Mon <span class="text-emerald-600">Panier</span></h1>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Cart Items -->
+                <div class="lg:col-span-2">
+                    <div id="cartItems"></div>
+                    <div id="emptyCart" class="text-center py-16 hidden">
+                        <i class="fas fa-shopping-cart text-6xl text-slate-200 mb-4"></i>
+                        <h2 class="text-2xl font-bold text-slate-900 mb-2">Votre panier est vide</h2>
+                        <p class="text-slate-500 mb-6">Découvrez nos produits et commencez vos achats !</p>
+                        <a href="products.html" class="inline-block px-8 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">Voir les produits</a>
+                    </div>
+                    <div id="cartLoading" class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-3xl text-emerald-600"></i>
+                        <p class="mt-4 text-slate-500">Chargement du panier...</p>
+                    </div>
+                </div>
+
+                <!-- Cart Summary -->
+                <div class="lg:col-span-1">
+                    <div id="cartSummary" class="cart-summary">
+                        <h2 class="text-xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-200">Résumé</h2>
+                        <div class="flex justify-between mb-2 text-slate-600">
+                            <span>Sous-total</span>
+                            <span id="subtotal">0.00 €</span>
+                        </div>
+                        <div class="flex justify-between mb-2 text-slate-600">
+                            <span>Livraison</span>
+                            <span>Gratuite</span>
+                        </div>
+                        <div class="flex justify-between pt-4 mt-4 border-t border-slate-200 text-lg font-bold">
+                            <span>Total</span>
+                            <span id="total" class="text-emerald-600">0.00 €</span>
+                        </div>
+                        <button id="checkoutBtn" class="btn-primary mt-6">
+                            <i class="fas fa-credit-card mr-2"></i> Passer la commande
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close">&times;</span>
+            <h2 class="text-2xl font-bold text-slate-900 mb-6">Finaliser la commande</h2>
+            <form id="checkoutForm">
+                <div class="form-group">
+                    <label for="deliveryAddress">Adresse de livraison (Mairie de Chlef)</label>
+                    <select id="deliveryAddress" required>
+                        <option value="">Sélectionnez une mairie</option>
+                        <option value="Chlef">Chlef</option>
+                        <option value="Abou El Hassan">Abou El Hassan</option>
+                        <option value="Aïn Merane">Aïn Merane</option>
+                        <option value="Bénairia">Bénairia</option>
+                        <option value="Boukadir">Boukadir</option>
+                        <option value="Chettia">Chettia</option>
+                        <option value="Djidioua">Djidioua</option>
+                        <option value="El Karimia">El Karimia</option>
+                        <option value="El Marsa">El Marsa</option>
+                        <option value="Ouled Fares">Ouled Fares</option>
+                        <option value="Oum Drou">Oum Drou</option>
+                        <option value="Sendjas">Sendjas</option>
+                        <option value="Sobha">Sobha</option>
+                        <option value="Ténès">Ténès</option>
+                        <option value="Zemmora">Zemmora</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryNotes">Notes de livraison (optionnel)</label>
+                    <textarea id="deliveryNotes" rows="2" placeholder="Instructions spéciales pour le livreur"></textarea>
+                </div>
+                <div id="checkoutSummary" class="bg-slate-50 p-4 rounded-xl mb-4"></div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check mr-2"></i> Confirmer la commande
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="footer-section">
+                    <div class="flex items-center gap-2 text-2xl font-bold mb-4">
+                        <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <span>CastleMarket</span>
+                    </div>
+                    <p class="text-slate-400">Votre supermarché en ligne de confiance</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Liens utiles</h3>
+                    <ul>
+                        <li><a href="dashboard.html">Mon compte</a></li>
+                        <li><a href="products.html">Produits</a></li>
+                        <li><a href="cart.html">Panier</a></li>
+                        <li><a href="orders.html">Commandes</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Suivez-nous</h3>
+                    <div class="social-links flex gap-3">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
+                <p>&copy; 2025 CastleMarket. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (!token) { window.location.href = '../index.html'; return; }
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    authManager.handleLogout();
+                    window.location.href = '../index.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

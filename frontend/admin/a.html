@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - CastleMarket</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root { --primary: #10b981; --primary-dark: #059669; --primary-light: #ecfdf5; }
+        .glass-nav { background: rgba(16, 185, 129, 0.95); backdrop-filter: blur(16px); }
+        .dashboard-card { background: white; border-radius: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+        .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .stat-icon { width: 60px; height: 60px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .stat-icon.orders { background: linear-gradient(135deg, #10b981, #34d399); color: white; }
+        .stat-icon.pending { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; }
+        .stat-icon.users { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; }
+        .stat-icon.revenue { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; }
+        .stat-icon.products { background: linear-gradient(135deg, #ec4899, #f472b6); color: white; }
+        .stat-icon.active { background: linear-gradient(135deg, #06b6d4, #22d3ee); color: white; }
+        .admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; overflow-x: auto; }
+        .tab-btn { padding: 0.75rem 1.5rem; border: 2px solid #e5e7eb; background: white; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; white-space: nowrap; }
+        .tab-btn:hover { border-color: #10b981; color: #10b981; }
+        .tab-btn.active { background-color: #10b981; border-color: #10b981; color: white; }
+        .tab-content { margin-top: 2rem; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .data-table { background: white; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .data-table table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #f3f4f6; }
+        .data-table th { background: #f9fafb; font-weight: 600; color: #374151; }
+        .data-table tbody tr:hover { background: #f9fafb; }
+        .action-btn { padding: 0.5rem 0.75rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; margin-right: 0.25rem; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.25rem; }
+        .btn-edit { background: #3b82f6; color: white; }
+        .btn-edit:hover { background: #2563eb; }
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-delete:hover { background: #dc2626; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-delivered { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .status-cancelled { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .status-pending { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-confirmed { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .status-preparing { background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+        .status-ready { background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+        .status-delivering { background-color: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); }
+        .modal-content { background-color: white; margin: 5% auto; padding: 2rem; border-radius: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; }
+        .modal-content.large { max-width: 800px; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; color: #9ca3af; cursor: pointer; }
+        .close:hover { color: #ef4444; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 1rem; font-size: 1rem; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+        .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb; }
+        .tab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .search-box input { padding: 0.625rem 1rem 0.625rem 2.5rem; border: 2px solid #e5e7eb; border-radius: 0.75rem; font-size: 0.875rem; width: 250px; transition: border-color 0.2s; }
+        .search-box input:focus { outline: none; border-color: #10b981; }
+        @media (max-width: 768px) { .admin-tabs { flex-direction: column; } .form-row { grid-template-columns: 1fr; } .data-table { overflow-x: auto; } .tab-header { flex-direction: column; align-items: stretch; } }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <a href="../index.html" class="flex items-center gap-2 text-2xl font-bold text-white">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-lg">
+                    <i class="fas fa-store"></i>
+                </div>
+                <span class="tracking-tight">CastleMarket</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-bold text-white">
+                <span class="text-emerald-200">Administration</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="userName" class="text-white font-medium">Admin</span>
+                <button id="logoutBtn" class="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all text-sm font-medium">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Déconnexion
+                </button>
+            </div>
+    </nav>
+
+    <main class="pt-28 pb-20">
+        <div class="container mx-auto px-6">
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900">Tableau de Bord <span class="text-emerald-600">Admin</span></h1>
+                <p class="text-slate-500 text-lg mt-2">Gérez le système</p>
+            </div>
+            <div id="dashboardLoading" class="hidden text-center py-8">
+                <i class="fas fa-spinner fa-spin text-3xl text-emerald-600"></i>
+                <p class="mt-4 text-slate-500">Chargement du tableau de bord...</p>
+            </div>
+            <div class="admin-tabs">
+                <button class="tab-btn" data-tab="stats"><i class="fas fa-chart-bar"></i> Statistiques</button>
+                <button class="tab-btn active" data-tab="products"><i class="fas fa-box"></i> Produits</button>
+                <button class="tab-btn" data-tab="orders"><i class="fas fa-shopping-cart"></i> Commandes</button>
+                <button class="tab-btn" data-tab="users"><i class="fas fa-users"></i> Utilisateurs</button>
+                <button class="tab-btn" data-tab="delivery"><i class="fas fa-truck"></i> Livreurs</button>
+            </div>
+
+            <div class="tab-content">
+                <div id="stats-tab" class="tab-pane">
+                    <div class="tab-header"><h2 class="text-xl font-bold text-slate-900">Statistiques du Système</h2></div>
+                    <div id="statsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+                <div id="products-tab" class="tab-pane active">
+                    <div class="tab-header">
+                        <h2 class="text-xl font-bold text-slate-900">Gestion des Produits</h2>
+                        <div class="flex gap-3">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="productSearch" placeholder="Rechercher un produit..." onkeyup="filterProducts()">
+                            </div>
+                            <button id="addProductBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">
+                                <i class="fas fa-plus mr-1"></i> Ajouter
+                            </button>
+                        </div>
+                    <div id="productsList" class="data-table">
+                        <table><thead><tr><th>ID</th><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody><tr><td colspan="7" class="text-center py-8 text-slate-500">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+
+                <div id="orders-tab" class="tab-pane">
+                    <div class="tab-header"><h2 class="text-xl font-bold text-slate-900">Gestion des Commandes</h2></div>
+                    <div id="ordersList" class="data-table">
+                        <table><thead><tr><th>ID</th><th>Client</th><th>Date</th><th>Total</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="text-center py-8 text-slate-500">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+
+                <div id="users-tab" class="tab-pane">
+                    <div class="tab-header">
+                        <h2 class="text-xl font-bold text-slate-900">Gestion des Utilisateurs</h2>
+                        <button id="addUserBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">
+                            <i class="fas fa-plus mr-1"></i> Ajouter
+                        </button>
+                    </div>
+                    <div id="usersList" class="data-table">
+                        <table><thead><tr><th>ID</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="text-center py-8 text-slate-500">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+
+                <div id="delivery-tab" class="tab-pane">
+                    <div class="tab-header">
+                        <h2 class="text-xl font-bold text-slate-900">Gestion des Livreurs</h2>
+                        <button id="addDeliveryBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">
+                            <i class="fas fa-plus mr-1"></i> Ajouter
+                        </button>
+                    </div>
+                    <div id="deliveryList" class="data-table">
+                        <table><thead><tr><th>ID</th><th>Nom</th><th>Téléphone</th><th>Email</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="text-center py-8 text-slate-500">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+            </div>
+    </main>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content large relative">
+            <span class="close" onclick="closeModal('productModal')">&times;</span>
+            <h2 id="productModalTitle" class="text-2xl font-bold text-slate-900 mb-6">Ajouter/Modifier Produit</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId" name="productId">
+                <div class="form-group">
+                    <label for="productName">Nom du Produit *</label>
+                    <input type="text" id="productName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="productDescription">Description</label>
+                    <textarea id="productDescription" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productPrice">Prix (€) *</label>
+                        <input type="number" id="productPrice" name="price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productStock">Stock *</label>
+                        <input type="number" id="productStock" name="stock" required>
+                    </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productCategory">Catégorie *</label>
+                        <select id="productCategory" name="category" required>
+                            <option value="">Sélectionner</option>
+                            <option value="Fruits et Légumes">Fruits et Légumes</option>
+                            <option value="Produits Laitiers">Produits Laitiers</option>
+                            <option value="Viandes et Poissons">Viandes et Poissons</option>
+                            <option value="Épicerie">Épicerie</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="productWeight">Poids (kg)</label>
+                        <input type="number" id="productWeight" name="weight" step="0.01">
+                    </div>
+                <div class="form-group">
+                    <label for="productImage">URL de l'Image</label>
+                    <input type="url" id="productImage" name="image_url">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-full font-bold hover:bg-slate-50 transition-all" onclick="closeModal('productModal')">Annuler</button>
+                    <button type="submit" class="px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+
+    <div id="userModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close" onclick="closeModal('userModal')">&times;</span>
+            <h2 id="userModalTitle" class="text-2xl font-bold text-slate-900 mb-6">Ajouter/Modifier Utilisateur</h2>
+            <form id="userForm">
+                <input type="hidden" id="userId" name="userId">
+                <div class="form-group">
+                    <label for="userName">Nom *</label>
+                    <input type="text" id="userName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">Email *</label>
+                    <input type="email" id="userEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="userPassword">Mot de passe <span id="passwordRequired">*</span></label>
+                    <input type="password" id="userPassword" name="password">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userRole">Rôle *</label>
+                        <select id="userRole" name="role" required>
+                            <option value="Admin">Admin</option>
+                            <option value="Livreur">Livreur</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userStatus">Statut</label>
+                        <select id="userStatus" name="status">
+                            <option value="Actif">Actif</option>
+                            <option value="Inactif">Inactif</option>
+                        </select>
+                    </div>
+                <div class="form-actions">
+                    <button type="button" class="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-full font-bold hover:bg-slate-50 transition-all" onclick="closeModal('userModal')">Annuler</button>
+                    <button type="submit" class="px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+
+    <div id="deliveryModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close" onclick="closeModal('deliveryModal')">&times;</span>
+            <h2 id="deliveryModalTitle" class="text-2xl font-bold text-slate-900 mb-6">Ajouter/Modifier Livreur</h2>
+            <form id="deliveryForm">
+                <input type="hidden" id="deliveryId" name="deliveryId">
+                <div class="form-group">
+                    <label for="deliveryName">Nom *</label>
+                    <input type="text" id="deliveryName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryPhone">Téléphone *</label>
+                    <input type="tel" id="deliveryPhone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryEmail">Email *</label>
+                    <input type="email" id="deliveryEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryStatus">Statut</label>
+                    <select id="deliveryStatus" name="status">
+                        <option value="Disponible">Disponible</option>
+                        <option value="Occupé">Occupé</option>
+                        <option value="Indisponible">Indisponible</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-full font-bold hover:bg-slate-50 transition-all" onclick="closeModal('deliveryModal')">Annuler</button>
+                    <button type="submit" class="px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (!token) { window.location.href = '../index.html'; return; }
+            loadTabData('products');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    authManager.handleLogout();
+                    window.location.href = '../index.html';
+                });
+            }
+        });
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) { if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } };
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(tabName + '-tab').classList.add('active');
+                loadTabData(tabName);
+            });
+        });
+        function loadTabData(tabName) { switch(tabName) { case 'stats': loadStats(); break; case 'products': loadProducts(); break; case 'orders': loadOrders(); break; case 'users': loadUsers(); break; case 'delivery': loadDelivery(); break; } }
+        
+        async function loadStats() {
+            try {
+                const response = await api.getAdminStats();
+                renderStatsTable(response.stats);
+            } catch (error) { renderStatsTable({ total_orders: 0, total_users: 0, total_products: 0, total_revenue: 0, pending_orders: 0, active_users: 0 }); }
+        }
+        function renderStatsTable(stats) {
+            const html = '<div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon orders"><i class="fas fa-shopping-cart"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.total_orders || 0) + '</h3><p class="text-slate-500 text-sm">Total Commandes</p></div><div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon pending"><i class="fas fa-clock"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.pending_orders || 0) + '</h3><p class="text-slate-500 text-sm">En Attente</p></div><div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon users"><i class="fas fa-users"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.total_users || 0) + '</h3><p class="text-slate-500 text-sm">Total Utilisateurs</p></div><div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon active"><i class="fas fa-user-check"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.active_users || 0) + '</h3><p class="text-slate-500 text-sm">Actifs</p></div><div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon products"><i class="fas fa-box"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.total_products || 0) + '</h3><p class="text-slate-500 text-sm">Produits</p></div><div class="dashboard-card p-6 flex items-center gap-4"><div class="stat-icon revenue"><i class="fas fa-euro-sign"></i></div><div><h3 class="text-2xl font-bold text-slate-900">' + (stats.total_revenue || 0) + ' €</h3><p class="text-slate-500 text-sm">Revenu Total</p></div>';
+            document.getElementById('statsList').innerHTML = html;
+        }
+        
+        let allProducts = [];
+        async function loadProducts() {
+            try {
+                const response = await api.getAdminProducts();
+                allProducts = response.products;
+                renderProducts(allProducts);
+            } catch (error) { document.getElementById('productsList').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erreur</td></tr>'; }
+        }
+        function filterProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.Nom.toLowerCase().includes(searchTerm) || p.Categorie.toLowerCase().includes(searchTerm));
+            renderProducts(filtered);
+        }
+        function renderProducts(products) {
+            const html = products.map(p => '<tr><td>' + p.ID_Produit + '</td><td class="font-bold">' + p.Nom + '</td><td>' + p.Categorie + '</td><td class="text-emerald-600 font-bold">' + p.Prix + '€</td><td>' + p.Stock + '</td><td><span class="status-badge ' + (p.Statut === 'Disponible' ? 'status-delivered' : 'status-cancelled') + '">' + p.Statut + '</span></td><td><button class="action-btn btn-edit" onclick="editProduct(' + p.ID_Produit + ')"><i class="fas fa-edit"></i></button><button class="action-btn btn-delete" onclick="deleteProduct(' + p.ID_Produit + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
+            document.getElementById('productsList').querySelector('tbody').innerHTML = html || '<tr><td colspan="7" class="text-center py-8 text-slate-500">Aucun produit</td></tr>';
+        }
+        
+        async function loadOrders() {
+            try {
+                const response = await api.getAdminOrders();
+                renderOrders(response.orders);
+            } catch (error) { document.getElementById('ordersList').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erreur</td></tr>'; }
+        }
+        function renderOrders(orders) {
+            const html = orders.map(o => '<tr><td class="font-bold">#' + o.ID_Commande + '</td><td>' + (o.client_name || 'N/A') + '</td><td>' + new Date(o.Date_Commande).toLocaleDateString('fr-FR') + '</td><td class="text-emerald-600 font-bold">' + o.Prix_Total + '€</td><td><span class="status-badge status-' + o.Statut.toLowerCase().replace(' ', '') + '">' + o.Statut + '</span></td><td><select onchange="updateOrderStatus(' + o.ID_Commande + ', this.value)" class="px-3 py-1 border rounded-lg text-sm"><option value="En attente"' + (o.Statut === 'En attente' ? ' selected' : '') + '>En attente</option><option value="Confirmée"' + (o.Statut === 'Confirmée' ? ' selected' : '') + '>Confirmée</option><option value="En préparation"' + (o.Statut === 'En préparation' ? ' selected' : '') + '>En préparation</option><option value="Prête"' + (o.Statut === 'Prête' ? ' selected' : '') + '>Prête</option><option value="En livraison"' + (o.Statut === 'En livraison' ? ' selected' : '') + '>En livraison</option><option value="Livrée"' + (o.Statut === 'Livrée' ? ' selected' : '') + '>Livrée</option><option value="Annulée"' + (o.Statut === 'Annulée' ? ' selected' : '') + '>Annulée</option></select></td></tr>').join('');
+            document.getElementById('ordersList').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" class="text-center py-8 text-slate-500">Aucune commande</td></tr>'
+;
+        }
+        
+        async function loadUsers() {
+            try {
+                const response = await api.getAdminUsers();
+                renderUsers(response.users);
+            } catch (error) { document.getElementById('usersList').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erreur</td></tr>'; }
+        }
+        function renderUsers(users) {
+            const html = users.map(u => '<tr><td>' + u.ID_Utilisateur + '</td><td class="font-bold">' + u.Nom + '</td><td>' + u.Email + '</td><td>' + u.Role + '</td><td><span class="status-badge ' + (u.Statut === 'Actif' ? 'status-delivered' : 'status-cancelled') + '">' + u.Statut + '</span></td><td><button class="action-btn btn-edit" onclick="editUser(' + u.ID_Utilisateur + ')"><i class="fas fa-edit"></i></button><button class="action-btn btn-delete" onclick="deleteUser(' + u.ID_Utilisateur + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
+            document.getElementById('usersList').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" class="text-center py-8 text-slate-500">Aucun utilisateur</td></tr>';
+        }
+        
+        async function loadDelivery() {
+            try {
+                const response = await api.getAdminDelivery();
+                if (response && response.deliveries && Array.isArray(response.deliveries)) {
+                    renderDelivery(response.deliveries);
+                } else if (response && response.error) {
+                    document.getElementById('deliveryList').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erreur serveur: ' + response.error + '</td></tr>';
+                } else {
+                    document.getElementById('deliveryList').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Format de réponse invalide.</td></tr>';
+                }
+            } catch (error) { 
+                document.getElementById('deliveryList').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erreur: ' + error.message + '</td></tr>'; 
+            }
+        }
+        function renderDelivery(deliveries) {
+            const html = deliveries.map(d => '<tr><td>' + d.ID_Livreur + '</td><td class="font-bold">' + d.Nom + '</td><td>' + (d.Telephone || '-') + '</td><td>' + d.Email + '</td><td><span class="status-badge ' + (d.Statut === 'Disponible' ? 'status-delivered' : 'status-cancelled') + '">' + d.Statut + '</span></td><td><button class="action-btn btn-edit" onclick="editDelivery(' + d.ID_Livreur + ')"><i class="fas fa-edit"></i></button><button class="action-btn btn-delete" onclick="deleteDelivery(' + d.ID_Livreur + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
+            document.getElementById('deliveryList').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" class="text-center py-8 text-slate-500">Aucun livreur</td></tr>';
+        }
+
+        document.getElementById('addProductBtn').addEventListener('click', function() {
+            document.getElementById('productModalTitle').textContent = 'Ajouter Produit';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            openModal('productModal');
+        });
+        function editProduct(id) {
+            api.getAdminProduct(id).then(r => {
+                const p = r.product;
+                document.getElementById('productModalTitle').textContent = 'Modifier Produit';
+                document.getElementById('productId').value = p.ID_Produit;
+                document.getElementById('productName').value = p.Nom;
+                document.getElementById('productDescription').value = p.Description || '';
+                document.getElementById('productPrice').value = p.Prix;
+                document.getElementById('productStock').value = p.Stock;
+                document.getElementById('productCategory').value = p.Categorie;
+                document.getElementById('productWeight').value = p.Poids || '';
+                document.getElementById('productImage').value = p.Image_URL || '';
+                openModal('productModal');
+            });
+        }
+        function deleteProduct(id) {
+            if (confirm('Supprimer ce produit?')) { api.deleteAdminProduct(id).then(() => loadProducts()); }
+        }
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const d = Object.fromEntries(new FormData(this));
+            (d.productId ? api.updateAdminProduct(d.productId, d) : api.createAdminProduct(d)).then(() => { closeModal('productModal'); loadProducts(); });
+        });
+
+        document.getElementById('addUserBtn').addEventListener('click', function() {
+            document.getElementById('userModalTitle').textContent = 'Ajouter Utilisateur';
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userPassword').setAttribute('required', 'required');
+            document.getElementById('passwordRequired').textContent = '*';
+            openModal('userModal');
+        });
+        function editUser(id) {
+            api.getAdminUser(id).then(r => {
+                const u = r.user;
+                document.getElementById('userModalTitle').textContent = 'Modifier Utilisateur';
+                document.getElementById('userId').value = u.ID_Utilisateur;
+                document.getElementById('userName').value = u.Nom;
+                document.getElementById('userEmail').value = u.Email;
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userPassword').removeAttribute('required');
+                document.getElementById('passwordRequired').textContent = '(optionnel)';
+                document.getElementById('userRole').value = u.Role;
+                document.getElementById('userStatus').value = u.Statut;
+                openModal('userModal');
+            });
+        }
+        function deleteUser(id) {
+            if (confirm('Supprimer cet utilisateur?')) { api.deleteAdminUser(id).then(() => loadUsers()); }
+        }
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const d = Object.fromEntries(new FormData(this));
+            (d.userId ? api.updateAdminUser(d.userId, d) : api.createAdminUser(d)).then(() => { closeModal('userModal'); loadUsers(); });
+        });
+
+        document.getElementById('addDeliveryBtn').addEventListener('click', function() {
+            document.getElementById('deliveryModalTitle').textContent = 'Ajouter Livreur';
+            document.getElementById('deliveryForm').reset();
+            document.getElementById('deliveryId').value = '';
+            openModal('deliveryModal');
+        });
+        function editDelivery(id) {
+            api.getAdminDeliveryPerson(id).then(r => {
+                const d = r.delivery;
+                document.getElementById('deliveryModalTitle').textContent = 'Modifier Livreur';
+                document.getElementById('deliveryId').value = d.ID_Livreur;
+                document.getElementById('deliveryName').value = d.Nom;
+                document.getElementById('deliveryPhone').value = d.Telephone;
+                document.getElementById('deliveryEmail').value = d.Email;
+                document.getElementById('deliveryStatus').value = d.Statut;
+                openModal('deliveryModal');
+            });
+        }
+        function deleteDelivery(id) {
+            if (confirm('Supprimer ce livreur?')) { api.deleteAdminDelivery(id).then(() => loadDelivery()); }
+        }
+        document.getElementById('deliveryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const d = Object.fromEntries(new FormData(this));
+            (d.deliveryId ? api.updateAdminDelivery(d.deliveryId, d) : api.createAdminDelivery(d)).then(() => { closeModal('deliveryModal'); loadDelivery(); });
+        });
+
+        async function updateOrderStatus(orderId, status) {
+            try { await api.updateAdminOrderStatus(orderId, status); alert('Statut mis à jour'); } 
+            catch (error) { alert('Erreur'); }
+        }
+    </script>
+</body>
+</html>

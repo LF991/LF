@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Commandes - CastleMarket</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root { --primary: #10b981; --primary-dark: #059669; }
+        .glass-nav { background: rgba(16, 185, 129, 0.95); backdrop-filter: blur(16px); }
+        .dashboard-card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .data-table table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #f3f4f6; }
+        .data-table th { background: #f9fafb; font-weight: 600; color: #374151; }
+        .data-table tbody tr:hover { background: #f9fafb; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-confirmed { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .status-preparing { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+        .status-ready { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+        .status-delivering { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .status-delivered { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .status-cancelled { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .action-btn { padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem; transition: all 0.2s; border: none; }
+        .btn-view { background: #10b981; color: white; }
+        .btn-view:hover { background: #059669; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); }
+        .modal-content { background-color: white; margin: 5% auto; padding: 2rem; border-radius: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; color: #9ca3af; cursor: pointer; }
+        .close:hover { color: #ef4444; }
+        footer { background: #0f172a; color: white; padding: 3rem 0 1rem; }
+        .footer-section h3 { color: white; margin-bottom: 1rem; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.5rem; }
+        .footer-section ul li a { color: #94a3b8; }
+        .footer-section ul li a:hover { color: #10b981; }
+        .social-links a { width: 40px; height: 40px; background: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s; }
+        .social-links a:hover { background: #10b981; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+    <!-- Navigation -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 py-4">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <a href="../index.html" class="flex items-center gap-2 text-2xl font-bold text-white">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-lg">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <span class="tracking-tight">CastleMarket</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-bold text-white">
+                <a href="dashboard.html" class="hover:text-emerald-200 transition-colors">Mon Compte</a>
+                <a href="products.html" class="hover:text-emerald-200 transition-colors">Produits</a>
+                <a href="cart.html" class="hover:text-emerald-200 transition-colors">Panier</a>
+                <a href="orders.html" class="text-emerald-200">Commandes</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-emerald-600">0</span>
+                </a>
+                <button id="logoutBtn" class="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all text-sm font-medium">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-28 pb-20">
+        <div class="container mx-auto px-6">
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900">Mes <span class="text-emerald-600">Commandes</span></h1>
+            </div>
+
+            <!-- Filter -->
+            <div class="dashboard-card p-6 mb-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="text-sm font-medium text-slate-600">Filtrer par statut:</label>
+                    <select id="statusFilter" class="px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Tous les statuts</option>
+                        <option value="En attente">En attente</option>
+                        <option value="Confirmée">Confirmée</option>
+                        <option value="En préparation">En préparation</option>
+                        <option value="Prête">Prête</option>
+                        <option value="En livraison">En livraison</option>
+                        <option value="Livrée">Livrée</option>
+                        <option value="Annulée">Annulée</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="dashboard-card">
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Nombre d'articles</th>
+                                <th>Total</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersList">
+                            <tr>
+                                <td colspan="6" class="text-center py-8">
+                                    <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
+                                    <p class="mt-2 text-slate-500">Chargement des commandes...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyOrders" class="text-center py-16 hidden">
+                <i class="fas fa-shopping-bag text-6xl text-slate-200 mb-4"></i>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Aucune commande trouvée</h2>
+                <p class="text-slate-500 mb-6">Vous n'avez pas encore passé de commande.</p>
+                <a href="products.html" class="inline-block px-8 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">Commencer les achats</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Order Details Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close">&times;</span>
+            <div id="orderDetails"></div>
+        </div>
+    </div>
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content relative" style="max-width: 800px;">
+            <span class="close" onclick="ordersManager.hideMapModal()">&times;</span>
+            <div id="mapContent"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="footer-section">
+                    <div class="flex items-center gap-2 text-2xl font-bold mb-4">
+                        <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <span>CastleMarket</span>
+                    </div>
+                    <p class="text-slate-400">Votre supermarché en ligne de confiance</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Liens utiles</h3>
+                    <ul>
+                        <li><a href="dashboard.html">Mon compte</a></li>
+                        <li><a href="products.html">Produits</a></li>
+                        <li><a href="cart.html">Panier</a></li>
+                        <li><a href="orders.html">Commandes</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Suivez-nous</h3>
+                    <div class="social-links flex gap-3">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
+                <p>&copy; 2025 CastleMarket. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (!token) { window.location.href = '../index.html'; return; }
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    authManager.handleLogout();
+                    window.location.href = '../index.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
